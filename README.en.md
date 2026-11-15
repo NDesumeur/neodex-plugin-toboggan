@@ -38,3 +38,15 @@ Your progress is saved by NeoDex, backed up and synced between your PCs if sync 
 In NeoDex: **NeoStore → Discover → Marble Run → Install**.
 
 Building a plugin: see the [NeoDex SDK](https://github.com/NDesumeur/neodex-sdk).
+
+## Full screen
+
+The "FULL SCREEN" button puts the game in full screen. The game also grows with the window, from a small laptop to a big screen.
+
+## Thirty levels and three new pieces
+
+- **Conveyor belt**: it carries the marbles that fall on it and throws them at its end. Click again to change its direction.
+- **Fan**: it blows the marbles passing on its row, to the right or to the left (click again to turn it).
+- **Magnet**: it pulls the marbles towards its column without stopping them: handy to aim at a pot.
+- **Coloured marbles**: green and yellow marbles on top of the red and blue ones, dispensers that drop two colours in turn, and levels where each marble must go into the pot of its colour.
+- **Twenty new levels** (30 in all), from the first conveyor belt to the grand finale. Each level was checked: it does not solve itself, and its solution works with the number of pieces for three stars.

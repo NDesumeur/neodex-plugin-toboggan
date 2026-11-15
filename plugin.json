@@ -1,9 +1,9 @@
 {
   "id": "neodex.toboggan",
   "name": "Toboggan",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "NDesumeur",
-  "description": "Jeu de construction de circuits à billes en pixel art : pose des rampes, des entonnoirs, des trampolines et des aiguillages pour mener les billes jusqu'aux pots, en passant par des tunnels et en évitant les pics. Une vraie physique (roulis, rebonds, chocs entre billes), dix niveaux, et trois étoiles pour qui trouve le circuit le plus court.",
+  "description": "Jeu de construction de circuits à billes en pixel art : pose des rampes, des entonnoirs, des trampolines et des aiguillages pour mener les billes jusqu'aux pots, en passant par des tunnels et en évitant les pics. Une vraie physique (roulis, rebonds, chocs entre billes), dix niveaux, et trois étoiles pour qui trouve le circuit le plus court. Bouton plein écran. Trente niveaux, avec trois nouvelles pièces (tapis roulant, ventilateur, aimant) et des billes vertes et jaunes à trier dans les pots de leur couleur.",
   "icon": "icon.png",
   "entry": "index.js",
   "view": "toboggan",

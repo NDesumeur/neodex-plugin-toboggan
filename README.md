@@ -38,3 +38,15 @@ Ta progression est enregistrée par NeoDex, sauvegardée et synchronisée entre 
 Dans NeoDex : **NeoStore → À découvrir → Toboggan → Installer**.
 
 Développer un plugin : voir le [SDK NeoDex](https://github.com/NDesumeur/neodex-sdk).
+
+## Plein écran
+
+Le bouton « PLEIN ÉCRAN » met le jeu en plein écran. Le jeu grandit aussi avec la fenêtre, du petit portable au grand écran.
+
+## Trente niveaux et trois nouvelles pièces
+
+- **Tapis roulant** : il emporte les billes qui tombent dessus et les lance au bout. Re-clique pour changer son sens.
+- **Ventilateur** : il souffle les billes qui passent sur sa rangée, vers la droite ou vers la gauche (re-clic pour le tourner).
+- **Aimant** : il attire les billes vers sa colonne sans les arrêter : pratique pour viser un pot.
+- **Billes de couleur** : des billes vertes et jaunes en plus des rouges et bleues, des distributeurs qui lâchent deux couleurs à tour de rôle, et des niveaux où il faut trier chaque bille dans le pot de sa couleur.
+- **Vingt nouveaux niveaux** (30 en tout), du premier tapis roulant au grand final. Chaque niveau a été vérifié : il ne se résout pas tout seul, et sa solution marche avec le nombre de pièces des trois étoiles.

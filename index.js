@@ -1,17 +1,19 @@
-// Toboggan : construire des circuits à billes : rampes, entonnoirs, trampolines, aiguillages et tunnels.
+// Toboggan : construire des circuits à billes : rampes, entonnoirs, trampolines, aiguillages, tapis roulants, ventilateurs, aimants et tunnels ; trente niveaux.
 // Jeu NeoDex en pixel art dessiné à la main (police bitmap, cadres et boutons en pixels). Il tourne dans le bac à sable de NeoDex.
 const HTML = `<div class="appWrap wide">
   <div class="agHead"><span class="label">Toboggan</span><span class="hint">clic : poser · re-clic : tourner ou enlever · Entrée : lancer · flèches et Espace au clavier</span></div>
   <div class="gMain"><div class="gameBox"><canvas id="tgCanvas" width="240" height="150" role="img" aria-label="Toboggan"></canvas></div>
     <div class="gSide">
       <div class="sysCard"><b>RECORDS</b><div class="gStats" id="tgStats"></div></div>
-      <div class="row"><button class="btn main" id="tgNew">NOUVELLE PARTIE</button></div>
-      <div class="hint">Des distributeurs lâchent des billes en haut du panneau. Choisis une pièce en bas (rampe, entonnoir, trampoline, aiguillage) et pose-la sur une case vide ; re-clique pour la tourner, puis pour l'enlever (ou clic droit). Lance : les billes roulent, rebondissent et s'entrechoquent pour de vrai. Mène-les toutes dans les pots, de la bonne couleur quand il y en a, sans les faire tomber sur les pics. Les tunnels violets et verts téléportent de l'entrée (trou noir) à la sortie. Moins tu poses de pièces, plus tu gagnes d'étoiles ; une étoile ouvre le niveau suivant.</div>
+      <div class="row"><button class="btn main" id="tgNew">NOUVELLE PARTIE</button><button class="btn" id="tgFs">PLEIN ÉCRAN</button></div>
+      <div class="hint">Des distributeurs lâchent des billes en haut du panneau. Choisis une pièce en bas (rampe, entonnoir, trampoline, aiguillage, tapis roulant, ventilateur, aimant) et pose-la sur une case vide ; re-clique pour la tourner, puis pour l'enlever (ou clic droit). Lance : les billes roulent, rebondissent et s'entrechoquent pour de vrai. Mène-les toutes dans les pots, de la bonne couleur quand il y en a, sans les faire tomber sur les pics. Les tunnels violets et verts téléportent de l'entrée (trou noir) à la sortie. Moins tu poses de pièces, plus tu gagnes d'étoiles ; une étoile ouvre le niveau suivant.</div>
     </div></div>
 </div>`;
 const CSS = `.gMain{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
 .gameBox{display:grid;place-items:center;padding:10px;background:#05010b;flex:0 0 auto;position:relative}
-.gameBox canvas{height:min(72vh,600px);width:auto;aspect-ratio:240/150;image-rendering:pixelated;cursor:var(--cp,pointer);touch-action:none}
+.gameBox:fullscreen{padding:0}
+.gameBox:fullscreen canvas{height:100vh;max-width:100vw}
+.gameBox canvas{height:min(calc(100vh - 190px),900px);min-height:300px;max-width:100%;width:auto;aspect-ratio:240/150;image-rendering:pixelated;cursor:var(--cp,pointer);touch-action:none}
 .gSide{display:flex;flex-direction:column;gap:14px;flex:1;min-width:250px;max-width:420px}
 .gSide .sysCard{display:flex;flex-direction:column}
 .gStats{display:grid;grid-template-columns:1fr auto;gap:4px 14px}
@@ -288,7 +290,7 @@ export default async function (ctx) {
   view.innerHTML = HTML;
   pxSkin(view.querySelector('.appWrap'), { title: "TOBOGGAN", T: {"k": "#0c0a12", "k2": "#16121e", "fill": "#221c2c", "fillOn": "#2e263a", "hl": "#3a3046", "line": "#62566e", "acc": "#f0a030", "accL": "#ffe0a0", "accS": "#a05a10", "accD": "#2a1808", "rivet": "#f0f0f8", "btn": "#3a3046", "btnHi": "#62566e", "btnLo": "#16121e", "btnHov": "#443852", "btnHovHi": "#82768e", "text": "#f4f0f8", "muted": "#c0b8cc", "acc2": "#7ee07a", "gold": "#ffd84a", "orange": "#ff8a3a", "red": "#ff4a3a", "green": "#7ee07a", "green2": "#2f8a3a", "bg": "#100c16", "bgDot": "#221c2c", "bgDot2": "#16121e", "spark": "#2a1808", "spark2": "#f0a030", "tile": ["................", "...:............", "................", "..........+.....", "................", "................", ".....:..........", "................", "................", ".............:..", "................", "..+.............", "................", ".........:......", "................", "................"]},
   emblem: ["............", ".kkk........", ".kaak.......", "..kaak......", "...kaak.....", "....kaak....", ".....kaak...", "......kaak..", ".......kk.k.", "........kwwk", "........kwwk", ".........kk."],
-  icons: [[/^NOUVELLE/, 'play'], [/^RECORDS/, 'crown']] });
+  icons: [[/^NOUVELLE/, 'play'], [/^RECORDS/, 'crown'], [/^PLEIN/, 'full']] });
   const $ = id => view.querySelector('#' + id) || document.getElementById(id);
   const doc = async n => { try { return await folder.read(n); } catch { return null; } };
   const games = { best: {}, ...(await doc('games')) };
@@ -335,9 +337,15 @@ const TG_SEG = {
   B: [[2, 12, 14, 12, 1]],
   U: [[1, 3, 1, 15], [1, 15, 15, 15], [15, 15, 15, 3]],
   S0: [[14, 3, 2, 13]], S1: [[2, 3, 14, 13]],
+  T0: [[0, 12, 16, 12, 0, 1.5]], T1: [[0, 12, 16, 12, 0, -1.5]],  // le 6e nombre : la vitesse du tapis (vers la droite si positif)
+  V0: [[2, 4, 2, 13], [2, 13, 8, 13], [8, 13, 8, 4], [8, 4, 2, 4]], V1: [[14, 4, 14, 13], [14, 13, 8, 13], [8, 13, 8, 4], [8, 4, 14, 4]],
 };
+// l'aimant attire les billes vers sa colonne (sans les bloquer), le ventilateur souffle sur sa rangée, vers la droite (V0) ou la gauche (V1)
+const TG_FIELD = {M: {up: 36, down: 20, side: 40}, V: {band: 9, reach: 80, push: .3}};
+const tgSeq = (c, n) => ({x: 'rb', z: 'rgb', w: 'gy'})[c]?.[n % ({x: 2, z: 3, w: 2})[c]] ?? c;  // un distributeur de plusieurs couleurs les lâche à tour de rôle
 // le panneau : . vide (on peut y poser), # mur, H distributeur, U pot, X pics, r l f b pièces fixes, A→a et C→c tunnels (entrée → sortie)
-const TG_PIECES = {R: 'Rampe', F: 'Entonnoir', B: 'Trampoline', S: 'Aiguillage'};
+const TG_PIECES = {R: 'Rampe', F: 'Entonnoir', B: 'Trampoline', S: 'Aiguillage', T: 'Tapis roulant', V: 'Ventilateur', M: 'Aimant'};
+const TG_FIRST = {S: 'S0', T: 'T0', V: 'V0'}, TG_TURN = {R: 'L', S0: 'S1', T0: 'T1', V0: 'V1'};  // la pièce posée, puis tournée
 const TG_PK = Object.keys(TG_PIECES);
 const TG_LEVELS = [
   {name: 'Première pente', hop: 'r', cups: '*', inv: {R: 2}, par: 1, sol: [[1, 1, 'R']], map: [
@@ -360,6 +368,46 @@ const TG_LEVELS = [
     '.H.............', '...............', '#####.#########', '..A............', '###########....', '.............a.', '...............', 'XXXXXXXXXXXU###']},
   {name: 'Grande machine', hop: 'x', cups: 'rb', inv: {R: 4, B: 1, F: 1, S: 1}, par: 3, sol: [[7, 1, 'S0'], [4, 6, 'F'], [9, 5, 'R']], map: [
     '.......H.......', '...............', '...............', '.C.............', '####.......####', '...............', '.............c.', 'XU##XXXXXXX##UX']},
+  {name: 'Tapis roulant', hop: 'r', cups: '*', inv: {T: 2}, par: 1, sol: [[1, 1, 'T0']], tip: 'Le tapis roulant emporte les billes · re-clic : il change de sens', map: [
+    '.H.............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXU#########']},
+  {name: 'Marche arrière', hop: 'g', cups: '*', inv: {T: 2}, par: 1, sol: [[10, 2, 'T1']], map: [
+    '..........H....', '...............', '...............', '...............', '...............', '...............', '...............', '#######UXXXXXXX']},
+  {name: 'Coup de vent', hop: 'b', cups: '*', inv: {V: 2}, par: 1, sol: [[1, 1, 'V0']], tip: 'Le ventilateur souffle les billes qui passent devant lui', map: [
+    '..H............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXXXXU######']},
+  {name: 'Vent contraire', hop: 'y', cups: '*', inv: {V: 2, R: 2}, par: 1, sol: [[11, 1, 'V1']], map: [
+    '.........H.....', '...............', '...............', '.......####....', '...............', '...............', '...............', '#U##XXXXXXXXXXX']},
+  {name: 'Aimant', hop: 'r', cups: '*', inv: {M: 2}, par: 1, sol: [[3, 3, 'M']], tip: "L'aimant attire les billes vers sa colonne", map: [
+    '.H.............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXU###########']},
+  {name: 'Aimant et pics', hop: 'gg', cups: '*', inv: {M: 1, R: 2}, par: 1, sol: [[4, 3, 'M']], map: [
+    '..H...H........', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXUXXXX######']},
+  {name: 'Long tapis', hop: 'r', cups: '*', inv: {T: 3, R: 1}, par: 2, sol: [[1, 1, 'T0'], [4, 4, 'T0']], map: [
+    '.H.............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXXXXU######']},
+  {name: 'Vert et jaune', hop: 'w', cups: 'gy', inv: {S: 1, R: 2}, par: 1, sol: [[4, 2, 'S0']], map: [
+    '....H..........', '...............', '...............', '...............', '...............', '...............', '...............', '#U#####U#######']},
+  {name: 'Croisement', hop: 'br', cups: 'rb', inv: {V: 2, T: 2}, par: 2, sol: [[2, 1, 'V0'], [10, 1, 'T1']], map: [
+    '....H.....H....', '...............', '...............', '...............', '...............', '...............', '...............', '######U#U######']},
+  {name: 'Souffle et aimant', hop: 'y', cups: '*', inv: {V: 1, M: 1, R: 1}, par: 2, sol: [[3, 1, 'M'], [3, 4, 'V0']], map: [
+    '.H.............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXXXXXXU####']},
+  {name: 'Le mur', hop: 'r', cups: '*', inv: {V: 2, T: 2, R: 2}, par: 2, sol: [[1, 1, 'T0'], [3, 2, 'T0']], map: [
+    '.H.............', '...............', '...............', '...............', '......###......', '......###......', '......###......', 'XXXXXX###XXU###']},
+  {name: 'Tunnel venteux', hop: 'b', cups: '*', inv: {V: 1, T: 2, R: 1}, par: 2, sol: [[1, 1, 'T0'], [4, 4, 'V0']], map: [
+    '.H.............', '...........#a#.', '...........#.#.', '...........#.#.', '...........#.#.', '........A..#.#.', '...........#.#.', 'XXXXXXXXXXX#U#X']},
+  {name: 'Va-et-vient', hop: 'gy', cups: 'yg', inv: {T: 2, V: 2, R: 2}, par: 2, sol: [[5, 0, 'V0'], [9, 1, 'T1']], map: [
+    '......H.H......', '...............', '...............', '...............', '...............', '...............', '...............', '##U#########U##']},
+  {name: 'Étagère', hop: 'y', cups: '*', inv: {B: 2, V: 1, R: 2}, par: 2, sol: [[0, 4, 'V0'], [1, 5, 'B']], map: [
+    '.H.............', '...............', '...............', '...............', '............U..', '...........###.', '...........###.', 'XXXXXXXXXXX###X']},
+  {name: 'Ricochets', hop: 'r', cups: '*', inv: {B: 2, V: 2, T: 1}, par: 2, sol: [[1, 1, 'T0'], [4, 4, 'B']], map: [
+    '.H.............', '...............', '...............', '.......#.......', '.......#.......', '.......#.......', '.......#.......', 'XXXXXXX#XXXXU##']},
+  {name: 'Pluie', hop: 'rrr', cups: '*', inv: {R: 2, T: 2, M: 2}, par: 4, sol: [[1, 1, 'R'], [5, 2, 'M'], [13, 1, 'L'], [9, 2, 'M']], map: [
+    '.H.....H.....H.', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXXXUXXXXXXX']},
+  {name: 'Usine', hop: 'x', cups: 'rb', inv: {S: 1, T: 2, V: 2}, par: 3, sol: [[7, 1, 'S0'], [4, 2, 'V0'], [7, 2, 'V1']], map: [
+    '.......H.......', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXUXXXXXXXUXXX']},
+  {name: 'Trieuse', hop: 'w', cups: 'yg', inv: {S: 1, T: 2, V: 2, R: 2}, par: 3, sol: [[2, 1, 'S0'], [1, 1, 'V0'], [6, 3, 'V1']], map: [
+    '..H............', '...............', '...............', '...............', '...............', '...............', '...............', 'XXXXXXUXXXXUXXX']},
+  {name: 'Tapis du haut', hop: 'b', cups: '*', inv: {T: 3, R: 2}, par: 3, sol: [[13, 1, 'L'], [11, 2, 'T1'], [8, 3, 'T1']], map: [
+    '.............H.', '...............', '...............', '...............', '...............', '...............', '...............', '###XU#XXXXXXXXX']},
+  {name: 'Grand final', hop: 'rb', cups: 'rb', inv: {V: 2, M: 2, T: 2, R: 2}, par: 3, sol: [[0, 0, 'V0'], [9, 5, 'M'], [12, 3, 'M']], map: [
+    '.H...........H.', '...............', '...............', '...............', '.....###.......', '...............', '...............', 'XXXXXXXXXU#XUXX']},
 ];
 const tgUnlocked = li => li === 0 || (tgs.stars[li - 1] || 0) >= 1;
 const tgFixed = c => '#HUXrlfbAaCc'.includes(c);
@@ -388,6 +436,7 @@ function tgLaunch() {
   tg.run = {...P, t: 0, still: 0, done: false, flip: new Map()};
   tg.balls = []; tg.fx = []; tg.msg = null;
   for (const [k, v] of tg.put) if (v[0] === 'S') tg.run.flip.set(k, v === 'S1' ? 1 : 0);
+  tg.run.fields = [...tg.put].filter(([, v]) => v === 'M' || v[0] === 'V').map(([k, v]) => ({v, x: k % TG.COLS * 16 + 8, y: Math.floor(k / TG.COLS) * 16 + 8}));
 }
 function tgSegs(tx, ty) {
   const c = tgCell(tx, ty); if (!c || c === '.') return null;
@@ -401,17 +450,22 @@ function tgHit(b, s, ox, oy) {
   const d = Math.sqrt(d2) || .001, nx = ex / d, ny = ey / d; b.x += nx * (R - d); b.y += ny * (R - d);
   const vn = b.vx * nx + b.vy * ny; if (vn >= 0) return;
   const tx = -ny, ty = nx, vt = b.vx * tx + b.vy * ty, nvn = s[4] ? Math.max(-vn, 3.3) : -vn * .25;
-  b.vx = nx * nvn + tx * vt * .997; b.vy = ny * nvn + ty * vt * .997;
+  const vt2 = s[5] ? vt + (s[5] - vt) * .35 : vt;  // un tapis roulant entraîne la bille qui le touche
+  b.vx = nx * nvn + tx * vt2 * .997; b.vy = ny * nvn + ty * vt2 * .997;
   if (s[4]) { if (-vn > .5) { tg.fx.push({x: b.x, y: b.y + 3, t: 0, k: 'boing'}); tgBeep(300, .12, 'square', 700); } }
   else if (-vn > 1.2) tgBeep(900 + Math.random() * 300, .03, 'triangle', 0, .02);
 }
 function tgStep() {
   const r = tg.run, {R, G, SUB, VMAX, TS} = TG; r.t++;
-  for (const h of r.hops) if (h.n < TG.PER && r.t % TG.EVERY === 1 + r.hops.indexOf(h) * 8) { tg.balls.push({x: h.x, y: h.y, vx: 0, vy: .3, c: h.c === 'x' ? 'rb'[h.n % 2] : h.c, st: 'go', still: 0, cool: 0, tile: -1}); h.n++; }
+  for (const h of r.hops) if (h.n < TG.PER && r.t % TG.EVERY === 1 + r.hops.indexOf(h) * 8) { tg.balls.push({x: h.x, y: h.y, vx: 0, vy: .3, c: tgSeq(h.c, h.n), st: 'go', still: 0, cool: 0, tile: -1}); h.n++; }
   for (let s = 0; s < SUB; s++) {
     for (const b of tg.balls) {
       if (b.st !== 'go') continue;
-      b.vy += G / SUB; const v = Math.hypot(b.vx, b.vy); if (v > VMAX) { b.vx *= VMAX / v; b.vy *= VMAX / v; }
+      b.vy += G / SUB;
+      for (const f of r.fields) { const dx = f.x - b.x, dy = f.y - b.y;
+        if (f.v === 'M') { const M = TG_FIELD.M; if (dy < M.up && dy > -M.down && Math.abs(dx) < M.side) b.vx += (dx * .12 - b.vx) * .08; }
+        else { const V = TG_FIELD.V, d = f.v === 'V0' ? -dx : dx; if (Math.abs(dy) < V.band && d > 4 && d < V.reach) b.vx += (f.v === 'V0' ? 1 : -1) * V.push * (1 - d / V.reach) / SUB; } }
+      const v = Math.hypot(b.vx, b.vy); if (v > VMAX) { b.vx *= VMAX / v; b.vy *= VMAX / v; }
       b.x += b.vx / SUB; b.y += b.vy / SUB;
       const tx = Math.floor(b.x / TS), ty = Math.floor(b.y / TS);
       for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 1; x++) { const S = tgSegs(x, y); if (S) for (const sg of S) tgHit(b, sg, x * TS, y * TS); }
@@ -449,9 +503,9 @@ const tgResult = () => ({n: TG.PER * tg.run.hops.length, ok: tg.balls.filter(b =
 function tgPlace(x, y) {  // poser la pièce choisie ; re-cliquer une rampe ou un aiguillage le tourne, puis l'enlève
   if (tg.mode !== 'edit' || tg.L.map[y]?.[x] !== '.') return false;
   tgStop(); const k = y * TG.COLS + x, p = tg.put.get(k);
-  if (p) { const next = {R: 'L', S0: 'S1'}[p]; if (next) tg.put.set(k, next); else tg.put.delete(k); tgBeep(next ? 600 : 300, .05); tgInfo(); return true; }
+  if (p) { const next = TG_TURN[p]; if (next) tg.put.set(k, next); else tg.put.delete(k); tgBeep(next ? 600 : 300, .05); tgInfo(); return true; }
   if (!tg.sel || tgLeft(tg.sel) <= 0) { tg.msg = {txt: 'Plus de ' + (TG_PIECES[tg.sel] || 'pièce').toLowerCase() + ' : enlèves-en une', t: 120}; return false; }
-  tg.put.set(k, tg.sel === 'S' ? 'S0' : tg.sel); tgBeep(800, .05); tgInfo(); return true;
+  tg.put.set(k, TG_FIRST[tg.sel] || tg.sel); tgBeep(800, .05); tgInfo(); return true;
 }
 function tgRemove(x, y) { if (tg.mode !== 'edit') return; tgStop(); if (tg.put.delete(y * TG.COLS + x)) { tgBeep(300, .05); tgInfo(); } }
 function tgStop() { tg.run = null; tg.balls = []; }
@@ -470,6 +524,7 @@ function tgUpdate() {  // appelée seulement pendant la descente (mode « play �
 // ---------- le dessin ----------
 const TG_BALL = ['..kkk..', '.kcwck.', 'kcwccdk', 'kccccdk', 'kcccddk', '.kcddk.', '..kkk..'];
 const TG_BCOL = {r: ['#e83a3a', '#a01a2a'], b: ['#3a7ae8', '#1a4aa0'], g: ['#3ac85a', '#1a8a3a'], y: ['#f8c830', '#b88a10']};
+const TG_CNAME = {r: 'rouge', b: 'bleue', g: 'verte', y: 'jaune'};
 const tgBallSpr = (g, x, y, c) => sprite(g, TG_BALL, Math.round(x - 3.5), Math.round(y - 3.5), {k: '#120c18', c: TG_BCOL[c][0], d: TG_BCOL[c][1], w: '#ffffff'});
 function tgLine(g, x0, y0, x1, y1, col, w = 1) { const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); for (let i = 0; i <= n; i++) px(g, col, x0 + (x1 - x0) * i / n - (w >> 1), y0 + (y1 - y0) * i / n - (w >> 1), w, w); }
 // une rampe ou un rail : dessus clair, corps, dessous sombre
@@ -486,6 +541,20 @@ function tgPiece(g, c, ox, oy, fixed, flip) {
   if (k === 'R' || k === 'L') { const s = TG_SEG[k][0]; tgRail(g, ox, oy, s, wood ? TG_WOOD : TG_PLAST.R); return; }
   if (k === 'F') { for (const s of TG_SEG.F) tgRail(g, ox, oy, s, wood ? TG_WOOD : TG_PLAST.F); return; }
   if (k === 'B') { sprite(g, ['kkkkkkkkkkkkkk', 'kWWWWWWWWWWWWk', 'kggggggggggggk', 'kddddddddddddk', 'kkkkkkkkkkkkkk', '..s.s....s.s..', '...s......s...'], ox + 1, oy + 9, {k: '#120c18', W: wood ? '#d8a870' : '#a0f0a0', g: wood ? '#9a6a3a' : '#3ac85a', d: wood ? '#5a3a1a' : '#1a8a3a', s: '#b0b0c8'}); return; }
+  if (k === 'M') {  // l'aimant en fer à cheval, pointes vers le bas ; ses ondes quand les billes roulent
+    sprite(g, ['..kkkkkkkk..', '.krrrrrrrrk.', 'krrRRRRRRrrk', 'krRkkkkkkRrk', 'krRk....kRrk', 'krrk....krrk', 'kwwk....kwwk', 'kWWk....kWWk', '.kk......kk.'], ox + 2, oy + 3, {k: '#120c18', r: '#c82a3a', R: '#ff6a6a', w: '#b8c0d8', W: '#e8ecf8'});
+    if (tg.run) for (let i = 0; i < 3; i++) { const t = (tg.tick / 3 + i * 6) % 18; px(g, '#ff9a9a', ox + 8 - t / 2, oy + 13 + t / 3, 1, 1); px(g, '#ff9a9a', ox + 8 + t / 2, oy + 13 + t / 3, 1, 1); } return; }
+  if (k[0] === 'T') {  // le tapis roulant : une bande de caoutchouc sur deux rouleaux, ses chevrons avancent dans son sens
+    const dir = k === 'T1' ? -1 : 1, off = tg.run ? Math.floor(tg.tick / 4) % 4 : 0;
+    px(g, '#120c18', ox, oy + 11, 16, 5); px(g, '#3a3448', ox, oy + 12, 16, 3); px(g, '#5a5468', ox, oy + 12, 16, 1);
+    for (let x = 0; x < 16; x += 4) { const cx = ox + (x + dir * off + 16) % 16; px(g, '#f0a030', cx, oy + 13, 1, 1); px(g, '#f0a030', cx - dir, oy + 12, 1, 1); px(g, '#f0a030', cx - dir, oy + 14, 1, 1); }
+    px(g, '#8a8aa0', ox + 1, oy + 15, 2, 1); px(g, '#8a8aa0', ox + 13, oy + 15, 2, 1); return; }
+  if (k[0] === 'V') {  // le ventilateur : un boîtier avec ses pales qui tournent, et l'air qui sort du côté où il souffle
+    const L = k === 'V1', bx = L ? ox + 8 : ox + 2, a = tg.run ? tg.tick / 2 : 0;
+    px(g, '#120c18', bx, oy + 4, 7, 10); px(g, '#7a809a', bx + 1, oy + 5, 5, 8); px(g, '#b8c0d8', bx + 1, oy + 5, 5, 1);
+    for (let i = 0; i < 3; i++) { const q = a + i * 2.09; px(g, '#e8ecf8', bx + 3 + Math.round(Math.cos(q) * 2), oy + 9 + Math.round(Math.sin(q) * 3), 1, 1); }
+    px(g, '#120c18', bx + 3, oy + 9, 1, 1); px(g, '#4a4a62', bx + 2, oy + 14, 3, 2);
+    for (let i = 0; i < 3; i++) { const t = tg.run ? (tg.tick / 2 + i * 5) % 14 : 4 + i * 3, x = L ? ox + 7 - t : ox + 9 + t; px(g, '#b0d8ff', x, oy + 6 + i * 3, 2, 1); } return; }
   if (k[0] === 'S') { const s = TG_SEG[flip ? 'S1' : 'S0'][0]; tgRail(g, ox, oy, s, wood ? TG_WOOD : TG_PLAST.S); px(g, '#120c18', ox + 6, oy + 6, 4, 4); px(g, '#e0e0f0', ox + 7, oy + 7, 2, 2); }
 }
 function tgDraw() {
@@ -502,7 +571,7 @@ function tgDraw() {
     if (base === '.') continue;
     if (base === 'H') { const h = hopAt.get(k);  // le distributeur : une trémie avec les billes qui restent
       sprite(g, ['kkkkkkkkkkkkkk', 'kWwwwwwwwwwwdk', 'kWwwwwwwwwwwdk', '.kWwwwwwwwwdk.', '..kWwwwwwwdk..', '...kWwwwwdk...', '....kWwwdk....', '.....kwdk.....', '.....k..k.....'], ox + 1, oy, {k: '#120c18', w: '#7a809a', W: '#b8c0d8', d: '#4a4a62'});
-      const left = TG.PER - (tg.run ? h.n : 0); for (let i = 0; i < left; i++) { const bc = h.c === 'x' ? 'rb'[(TG.PER - left + i) % 2] : h.c; sprite(g, ['.kk.', 'kcwk', 'kcck', '.kk.'], ox + 3 + i * 4, oy + 1, {k: '#120c18', c: TG_BCOL[bc][0], w: '#ffffff'}); } continue; }
+      const left = TG.PER - (tg.run ? h.n : 0); for (let i = 0; i < left; i++) { const bc = tgSeq(h.c, TG.PER - left + i); sprite(g, ['.kk.', 'kcwk', 'kcck', '.kk.'], ox + 3 + i * 4, oy + 1, {k: '#120c18', c: TG_BCOL[bc][0], w: '#ffffff'}); } continue; }
     if (base === 'U') { const u = cupAt.get(k), col = u.c === '*' ? '#e8e4ff' : TG_BCOL[u.c][0];  // le pot : un bocal avec un ruban de sa couleur
       px(g, '#120c18', ox, oy + 2, 3, 14); px(g, '#120c18', ox + 13, oy + 2, 3, 14); px(g, '#120c18', ox, oy + 14, 16, 2);
       px(g, '#a8d0f0', ox + 1, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 14, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 1, oy + 14, 14, 1); px(g, '#203048', ox + 2, oy + 4, 12, 10);
@@ -527,13 +596,13 @@ function tgDraw() {
   // la case visée (clavier ou souris) avec l'aperçu de la pièce choisie
   const cur = tg.kb ? tg.cur : tg.hover;
   if (tg.mode === 'edit' && cur && !tg.run) { const ox = cur.x * TS, oy = cur.y * TS, free = tg.L.map[cur.y][cur.x] === '.', w = free ? '#ffffff' : '#ff6a5a';
-    if (free && !tg.put.has(cur.y * COLS + cur.x) && tg.sel && tgLeft(tg.sel) > 0) { g.globalAlpha = .5; tgPiece(g, tg.sel === 'S' ? 'S0' : tg.sel, ox, oy, false, false); g.globalAlpha = 1; }
+    if (free && !tg.put.has(cur.y * COLS + cur.x) && tg.sel && tgLeft(tg.sel) > 0) { g.globalAlpha = .5; tgPiece(g, TG_FIRST[tg.sel] || tg.sel, ox, oy, false, false); g.globalAlpha = 1; }
     for (const [a, b] of [[0, 0], [12, 0], [0, 15], [12, 15]]) px(g, w, ox + a, oy + b, 4, 1); for (const [a, b] of [[0, 0], [15, 0], [0, 12], [15, 12]]) px(g, w, ox + a, oy + b, 1, 4); }
   // en bas : les pièces à poser, les billes arrivées, le bouton
   const hy = ROWS * TS; px(g, '#141222', 0, hy, W, H - hy); px(g, '#2a2640', 0, hy, W, 1);
   TG_PK.filter(k => tg.L.inv[k]).forEach((k, i) => { const x = 2 + i * 30, on = tg.sel === k, n = tgLeft(k);
     px(g, on ? '#ffd84a' : '#2a2640', x, hy + 3, 29, 18); px(g, on ? '#2a2018' : '#1c1a2e', x + 1, hy + 4, 27, 16);
-    tgPiece(g, k === 'S' ? 'S0' : k, x, hy + 4, false, false); pxFont(g, String(n), x + 27, hy + 18, n ? '#ffffff' : '#5a5068', 7, 'right'); });
+    tgPiece(g, TG_FIRST[k] || k, x, hy + (k === 'T' ? -2 : 4), false, false);  /* le tapis, en bas de sa case, remonté dans le bouton */ pxFont(g, String(n), x + 27, hy + 18, n ? '#ffffff' : '#5a5068', 7, 'right'); });
   const res = tg.run ? tgResult() : null;
   pxFont(g, res ? 'Billes ' + res.ok + ' / ' + res.n : '3★ : ' + tg.L.par + ' pièce' + (tg.L.par > 1 ? 's' : ''), 186, hy + 15, res ? '#ffffff' : '#b8b0c8', 6, 'right');
   const running = tg.mode === 'play'; px(g, running ? '#e84a3a' : '#3ac85a', 190, hy + 4, 48, 16); px(g, running ? '#ff8a7a' : '#a0f0a0', 190, hy + 4, 48, 1); px(g, '#120c18', 190, hy + 19, 48, 1);
@@ -542,14 +611,14 @@ function tgDraw() {
   if (tg.mode === 'pause') gameText(g, W, [['PAUSE', '#ffd84a', 12], ['Entrée : reprendre', '#b8b0c8']], 60);
   if (tg.mode === 'ready') { const cupsTxt = tg.L.cups === '*' ? 'Mène toutes les billes dans les pots' : 'Chaque bille dans le pot de sa couleur';
     gameText(g, W, [[(tg.li + 1) + '. ' + tg.L.name.toUpperCase(), '#ffd84a', 12], [cupsTxt, '#ffffff'], ['3 étoiles : ' + tg.L.par + ' pièce' + (tg.L.par > 1 ? 's' : '') + ' ou moins', '#ffd84a'],
-      ['Clic : poser · re-clic : tourner ou enlever', '#b8d0ff'], ['← → : niveau · Espace : construire', '#b8b0c8']], 34); }
+      tg.L.tip ? [tg.L.tip, '#ffb070'] : ['Clic : poser · re-clic : tourner ou enlever', '#b8d0ff'], ['← → : niveau · Espace : construire', '#b8b0c8']], 34); }
   if (tg.mode === 'over' && tg.dead > 20) {
     gameText(g, W, [['CIRCUIT RÉUSSI !', '#ffd84a', 12], [tg.put.size + ' pièce' + (tg.put.size > 1 ? 's' : '') + (tg.record ? ' · RECORD !' : ''), '#ffffff'], ['', ''], ['', ''],
       [tg.dead > 50 ? (tg.li + 1 < TG_LEVELS.length ? 'Espace : niveau suivant · R : refaire' : 'Espace : rejouer') : '', '#b8b0c8']], 40);
     tgStars(g, tg.stars, W / 2 - 25, 61);
   }
   if (tg.tick % 15 === 0) g.canvas.setAttribute('aria-label', 'Toboggan, niveau ' + (tg.li + 1) + ' ' + tg.L.name + ' : ' + {ready: 'présentation', edit: 'construction', play: 'en route', pause: 'pause', over: 'réussi'}[tg.mode] +
-    ', ' + tg.put.size + ' pièces posées' + (res ? ', billes arrivées ' + res.ok + ' sur ' + res.n : '') + ', pièce choisie ' + (TG_PIECES[tg.sel] || 'aucune') + (tg.mode === 'over' ? ', ' + tg.stars + ' étoiles' : '') + '.');
+    ', ' + tg.put.size + ' pièces posées' + (tg.L.cups !== '*' ? ', pots ' + [...new Set(tg.L.cups)].map(c => TG_CNAME[c]).join(', ') : '') + (res ? ', billes arrivées ' + res.ok + ' sur ' + res.n : '') + ', pièce choisie ' + (TG_PIECES[tg.sel] || 'aucune') + (tg.mode === 'over' ? ', ' + tg.stars + ' étoiles' : '') + '.');
 }
 const TG_STAR = ['...k...', '..kyk..', 'kkkyykk', 'kyyyyyk', '.kyyyk.', '.kykyk.', 'kk...kk'];
 function tgStars(g, n, x, y) { for (let i = 0; i < 3; i++) TG_STAR.forEach((r, j) => [...r].forEach((c, k) => { const col = (i < n ? {k: '#1a1008', y: '#ffd84a'} : {k: '#5a5068', y: '#3a3046'})[c]; if (col) px(g, col, x + i * 18 + k * 2, y + j * 2, 2, 2); })); }
@@ -614,6 +683,8 @@ setTimeout(() => {  // vérification, 2 s après le chargement : chaque niveau e
   Object.assign(tgs, JSON.parse(keepS)); for (const k of Object.keys(tgs)) if (!(k in JSON.parse(keepS))) delete tgs[k];
   tg = keep; tgMute = false; if (tg) tgInfo();
 }, 2000);
+$('tgFs').onclick = () => { $('tgFs').blur(); try { document.fullscreenElement ? document.exitFullscreen() : $('tgCanvas').parentElement.requestFullscreen?.().catch(() => {}); } catch {} };
+$('tgCanvas').__tg = {st: () => tg, sol: li => { tgNew(li); tg.mode = 'edit'; for (const [x, y, k] of TG_LEVELS[li].sol) tg.put.set(y * TG.COLS + x, k); tgInfo(); tgGo(); }};  // pour le test « local »
 ctx.onOpen(() => {
   if (!tg || !tg.g) { tgNew(tgUnlocked(tgs.level) ? tgs.level : 0); tg.g = $('tgCanvas').getContext('2d'); }
   gameLoop(tg, 'toboggan', tgUpdate, tgDraw); tgInfo();
