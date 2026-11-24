@@ -1,16 +1,19 @@
 {
   "id": "neodex.toboggan",
   "name": "Toboggan",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "author": "NDesumeur",
-  "description": "Jeu de construction de circuits à billes en pixel art : pose des rampes, des entonnoirs, des trampolines et des aiguillages pour mener les billes jusqu'aux pots, en passant par des tunnels et en évitant les pics. Une vraie physique (roulis, rebonds, chocs entre billes), dix niveaux, et trois étoiles pour qui trouve le circuit le plus court. Bouton plein écran. Trente niveaux, avec trois nouvelles pièces (tapis roulant, ventilateur, aimant) et des billes vertes et jaunes à trier dans les pots de leur couleur.",
+  "description": "Jeu de construction de circuits à billes en pixel art : pose des rampes, des entonnoirs, des trampolines et des aiguillages pour mener les billes jusqu'aux pots, en passant par des tunnels et en évitant les pics. Une vraie physique (roulis, rebonds, chocs entre billes), dix niveaux, et trois étoiles pour qui trouve le circuit le plus court. Bouton plein écran. Trente niveaux, avec trois nouvelles pièces (tapis roulant, ventilateur, aimant) et des billes vertes et jaunes à trier dans les pots de leur couleur. Un bac à sable libre : on pose aussi les distributeurs, les pots, les murs et les pics.",
   "icon": "icon.png",
   "entry": "index.js",
   "view": "toboggan",
   "neobase": ">=4.0.0",
   "type": "app",
   "category": "Jeux",
-  "compatibility": ["windows", "linux"],
+  "compatibility": [
+    "windows",
+    "linux"
+  ],
   "syncMode": "aucune",
   "syncInfo": "Rien n'est synchronisé : tes records restent sur cet appareil.",
   "mobile": false,

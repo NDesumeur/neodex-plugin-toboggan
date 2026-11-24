@@ -4,6 +4,10 @@ Un jeu de circuits à billes en pixel art : pose des pièces sur le panneau pour
 
 *English version: [README.en.md](README.en.md)*
 
+## Bac à sable (nouveau en 1.2.0)
+
+Le bouton **BAC À SABLE** ouvre un panneau libre, sans niveau ni limite de pièces. En plus des rampes, entonnoirs, trampolines, aiguillages, tapis, ventilateurs et aimants, on y pose soi-même le décor : distributeurs (chacun de sa couleur), pots, murs et pics. Re-cliquer un élément du décor l'enlève. LANCER dit combien de billes finissent dans les pots. Le circuit est gardé d'une fois sur l'autre.
+
 ## Commandes
 
 - **Souris** : clique sur une pièce en bas pour la choisir, puis sur une case vide pour la poser. Re-clique une rampe ou un aiguillage pour le tourner, puis encore pour l'enlever ; clic droit pour enlever.

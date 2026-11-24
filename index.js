@@ -5,7 +5,7 @@ const HTML = `<div class="appWrap wide">
   <div class="gMain"><div class="gameBox"><canvas id="tgCanvas" width="240" height="150" role="img" aria-label="Toboggan"></canvas></div>
     <div class="gSide">
       <div class="sysCard"><b>RECORDS</b><div class="gStats" id="tgStats"></div></div>
-      <div class="row"><button class="btn main" id="tgNew">NOUVELLE PARTIE</button><button class="btn" id="tgFs">PLEIN ÉCRAN</button></div>
+      <div class="row"><button class="btn main" id="tgNew">NOUVELLE PARTIE</button><button class="btn" id="tgSand">BAC À SABLE</button><button class="btn" id="tgFs">PLEIN ÉCRAN</button></div>
       <div class="hint">Des distributeurs lâchent des billes en haut du panneau. Choisis une pièce en bas (rampe, entonnoir, trampoline, aiguillage, tapis roulant, ventilateur, aimant) et pose-la sur une case vide ; re-clique pour la tourner, puis pour l'enlever (ou clic droit). Lance : les billes roulent, rebondissent et s'entrechoquent pour de vrai. Mène-les toutes dans les pots, de la bonne couleur quand il y en a, sans les faire tomber sur les pics. Les tunnels violets et verts téléportent de l'entrée (trou noir) à la sortie. Moins tu poses de pièces, plus tu gagnes d'étoiles ; une étoile ouvre le niveau suivant.</div>
     </div></div>
 </div>`;
@@ -347,6 +347,10 @@ const tgSeq = (c, n) => ({x: 'rb', z: 'rgb', w: 'gy'})[c]?.[n % ({x: 2, z: 3, w:
 const TG_PIECES = {R: 'Rampe', F: 'Entonnoir', B: 'Trampoline', S: 'Aiguillage', T: 'Tapis roulant', V: 'Ventilateur', M: 'Aimant'};
 const TG_FIRST = {S: 'S0', T: 'T0', V: 'V0'}, TG_TURN = {R: 'L', S0: 'S1', T0: 'T1', V0: 'V1'};  // la pièce posée, puis tournée
 const TG_PK = Object.keys(TG_PIECES);
+// le bac à sable : on pose aussi le décor (distributeurs, pots, murs, pics), sans limite de pièces ; le circuit est gardé
+const TG_BUILD = {H: 'Distributeur', U: 'Pot', '#': 'Mur', X: 'Pics'};
+const tgLive = () => tg.free ? [...Object.keys(TG_BUILD), ...TG_PK] : TG_PK.filter(k => tg.L.inv[k]);
+const tgBW = () => tg.free ? 17 : 30;  // la largeur d'un bouton de pièce en bas
 const TG_LEVELS = [
   {name: 'Première pente', hop: 'r', cups: '*', inv: {R: 2}, par: 1, sol: [[1, 1, 'R']], map: [
     '.H.............', '...............', '...............', '...............', '...............', '...............', '...............', '###########U###']},
@@ -419,6 +423,23 @@ function tgNew(li = tgs.level) {
     run: null, stars: 0, record: false, fx: [], kb: false, hover: null});
   tgInfo();
 }
+function tgSand() {
+  const s = tgs.sand; tgNew(tg?.li ?? tgs.level);
+  Object.assign(tg, {free: true, mode: 'edit', sel: 'R', L: {name: 'Bac à sable', hop: 'rbgy', cups: '*', par: 0, inv: Object.fromEntries([...Object.keys(TG_BUILD), ...TG_PK].map(k => [k, 99])), map: [...(s?.map || TG_LEVELS[0].map)]}, put: new Map(s?.put || [])});
+  tgInfo();
+}
+function tgBuildAt(x, y) {  // bac à sable : poser le décor choisi sur une case vide, ou enlever celui qui est là
+  const c = tg.L.map[y]?.[x], k = y * TG.COLS + x; if (c === undefined) return false;
+  let to; if (TG_BUILD[c]) to = '.'; else if (TG_BUILD[tg.sel] && c === '.' && !tg.put.has(k)) to = tg.sel; else return false;
+  tgStop(); tg.L.map[y] = tg.L.map[y].slice(0, x) + to + tg.L.map[y].slice(x + 1); tgBeep(to === '.' ? 300 : 800, .05); tgInfo(); return true;
+}
+function tgBuildArt(g, k, ox, oy, col = '#e8e4ff') {  // le dessin d'un distributeur, d'un pot ou des pics
+  if (k === 'H') sprite(g, ['kkkkkkkkkkkkkk', 'kWwwwwwwwwwwdk', 'kWwwwwwwwwwwdk', '.kWwwwwwwwwdk.', '..kWwwwwwwdk..', '...kWwwwwdk...', '....kWwwdk....', '.....kwdk.....', '.....k..k.....'], ox + 1, oy, {k: '#120c18', w: '#7a809a', W: '#b8c0d8', d: '#4a4a62'});
+  if (k === 'U') { px(g, '#120c18', ox, oy + 2, 3, 14); px(g, '#120c18', ox + 13, oy + 2, 3, 14); px(g, '#120c18', ox, oy + 14, 16, 2);
+    px(g, '#a8d0f0', ox + 1, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 14, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 1, oy + 14, 14, 1); px(g, '#203048', ox + 2, oy + 4, 12, 10); px(g, col, ox, oy + 2, 3, 2); px(g, col, ox + 13, oy + 2, 3, 2); }
+  if (k === 'X') { px(g, '#2a2438', ox, oy + 13, 16, 3); for (let i = 0; i < 4; i++) { px(g, '#8a8aa0', ox + i * 4 + 1, oy + 9, 3, 4); px(g, '#c8c8d8', ox + i * 4 + 2, oy + 7, 1, 6); px(g, '#ffffff', ox + i * 4 + 2, oy + 6, 1, 1); } }
+}
+const tgIcon = (g, k, ox, oy) => TG_BUILD[k] && k !== '#' ? tgBuildArt(g, k, ox, oy) : tgPiece(g, TG_FIRST[k] || k, ox, oy, false, false);
 const tgUsed = k => [...tg.put.values()].filter(v => v[0] === k).length;
 const tgLeft = k => (tg.L.inv[k] || 0) - tgUsed(k);
 function tgCell(x, y) { if (x < 0 || y < 0 || x >= TG.COLS || y >= TG.ROWS) return ''; const p = tg.put.get(y * TG.COLS + x); return p || tg.L.map[y][x]; }
@@ -501,19 +522,20 @@ function tgStep() {
 }
 const tgResult = () => ({n: TG.PER * tg.run.hops.length, ok: tg.balls.filter(b => b.st === 'in').length});
 function tgPlace(x, y) {  // poser la pièce choisie ; re-cliquer une rampe ou un aiguillage le tourne, puis l'enlève
-  if (tg.mode !== 'edit' || tg.L.map[y]?.[x] !== '.') return false;
+  if (tg.mode !== 'edit') return false; if (tg.free && tgBuildAt(x, y)) return true; if (tg.L.map[y]?.[x] !== '.') return false;
   tgStop(); const k = y * TG.COLS + x, p = tg.put.get(k);
   if (p) { const next = TG_TURN[p]; if (next) tg.put.set(k, next); else tg.put.delete(k); tgBeep(next ? 600 : 300, .05); tgInfo(); return true; }
   if (!tg.sel || tgLeft(tg.sel) <= 0) { tg.msg = {txt: 'Plus de ' + (TG_PIECES[tg.sel] || 'pièce').toLowerCase() + ' : enlèves-en une', t: 120}; return false; }
   tg.put.set(k, TG_FIRST[tg.sel] || tg.sel); tgBeep(800, .05); tgInfo(); return true;
 }
-function tgRemove(x, y) { if (tg.mode !== 'edit') return; tgStop(); if (tg.put.delete(y * TG.COLS + x)) { tgBeep(300, .05); tgInfo(); } }
+function tgRemove(x, y) { if (tg.mode !== 'edit') return; tgStop(); if (tg.free && TG_BUILD[tg.L.map[y]?.[x]]) { tgBuildAt(x, y); return; } if (tg.put.delete(y * TG.COLS + x)) { tgBeep(300, .05); tgInfo(); } }
 function tgStop() { tg.run = null; tg.balls = []; }
-function tgGo() { if (tg.mode !== 'edit') return; if (tg.run && !tg.run.done) { tgStop(); return; } tgLaunch(); tg.mode = 'play'; tgBeep(520, .1, 'square', 780); }
+function tgGo() { if (tg.mode !== 'edit') return; if (tg.free && !tgPrep().hops.length) { tg.msg = {txt: 'Pose d\'abord un distributeur', t: 150}; return; } if (tg.run && !tg.run.done) { tgStop(); return; } tgLaunch(); tg.mode = 'play'; tgBeep(520, .1, 'square', 780); }
 function tgUpdate() {  // appelée seulement pendant la descente (mode « play » de la boucle du jeu)
   tgStep();
   if (!tg.run.done) return;
   const {n, ok} = tgResult(), used = tg.put.size;
+  if (tg.free) { tg.mode = 'edit'; tg.msg = {txt: ok + ' bille' + (ok > 1 ? 's' : '') + ' sur ' + n + ' dans les pots', t: 300}; tgBeep(ok === n ? 660 : 330, .3, 'square', ok === n ? 1320 : 165); return; }
   if (ok === n) {
     tg.mode = 'over'; tg.dead = 0; tg.stars = used <= tg.L.par ? 3 : used <= tg.L.par + 2 ? 2 : 1; tgs.wins++;
     const b = tgs.best[tg.li]; tg.record = b != null && used < b; if (b == null || used < b) tgs.best[tg.li] = used;
@@ -570,13 +592,11 @@ function tgDraw() {
     if (put) { tgPiece(g, put, ox, oy, false, (tg.run?.flip.get(k) ?? (put === 'S1' ? 1 : 0)) === 1); continue; }
     if (base === '.') continue;
     if (base === 'H') { const h = hopAt.get(k);  // le distributeur : une trémie avec les billes qui restent
-      sprite(g, ['kkkkkkkkkkkkkk', 'kWwwwwwwwwwwdk', 'kWwwwwwwwwwwdk', '.kWwwwwwwwwdk.', '..kWwwwwwwdk..', '...kWwwwwdk...', '....kWwwdk....', '.....kwdk.....', '.....k..k.....'], ox + 1, oy, {k: '#120c18', w: '#7a809a', W: '#b8c0d8', d: '#4a4a62'});
+      tgBuildArt(g, 'H', ox, oy);
       const left = TG.PER - (tg.run ? h.n : 0); for (let i = 0; i < left; i++) { const bc = tgSeq(h.c, TG.PER - left + i); sprite(g, ['.kk.', 'kcwk', 'kcck', '.kk.'], ox + 3 + i * 4, oy + 1, {k: '#120c18', c: TG_BCOL[bc][0], w: '#ffffff'}); } continue; }
     if (base === 'U') { const u = cupAt.get(k), col = u.c === '*' ? '#e8e4ff' : TG_BCOL[u.c][0];  // le pot : un bocal avec un ruban de sa couleur
-      px(g, '#120c18', ox, oy + 2, 3, 14); px(g, '#120c18', ox + 13, oy + 2, 3, 14); px(g, '#120c18', ox, oy + 14, 16, 2);
-      px(g, '#a8d0f0', ox + 1, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 14, oy + 3, 1, 12); px(g, '#6a8aa8', ox + 1, oy + 14, 14, 1); px(g, '#203048', ox + 2, oy + 4, 12, 10);
-      px(g, col, ox, oy + 2, 3, 2); px(g, col, ox + 13, oy + 2, 3, 2); continue; }
-    if (base === 'X') { px(g, '#2a2438', ox, oy + 13, 16, 3); for (let i = 0; i < 4; i++) { px(g, '#8a8aa0', ox + i * 4 + 1, oy + 9, 3, 4); px(g, '#c8c8d8', ox + i * 4 + 2, oy + 7, 1, 6); px(g, '#ffffff', ox + i * 4 + 2, oy + 6, 1, 1); } continue; }
+      tgBuildArt(g, 'U', ox, oy, col); continue; }
+    if (base === 'X') { tgBuildArt(g, 'X', ox, oy); continue; }
     if ('AaCc'.includes(base)) { const col = 'Aa'.includes(base) ? ['#c86ae8', '#6a2a90'] : ['#5ae0a0', '#1a8a5a'], ent = base === 'A' || base === 'C', t = tg.tick / 6;
       for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + (ent ? t : -t); px(g, i % 3 ? col[1] : col[0], ox + 7.5 + Math.cos(a) * 6, oy + 7.5 + Math.sin(a) * 6, 1, 1); }
       px(g, ent ? '#05010b' : col[1], ox + 5, oy + 5, 6, 6); if (!ent) px(g, col[0], ox + 7, oy + 7, 2, 2); continue; }
@@ -596,15 +616,15 @@ function tgDraw() {
   // la case visée (clavier ou souris) avec l'aperçu de la pièce choisie
   const cur = tg.kb ? tg.cur : tg.hover;
   if (tg.mode === 'edit' && cur && !tg.run) { const ox = cur.x * TS, oy = cur.y * TS, free = tg.L.map[cur.y][cur.x] === '.', w = free ? '#ffffff' : '#ff6a5a';
-    if (free && !tg.put.has(cur.y * COLS + cur.x) && tg.sel && tgLeft(tg.sel) > 0) { g.globalAlpha = .5; tgPiece(g, TG_FIRST[tg.sel] || tg.sel, ox, oy, false, false); g.globalAlpha = 1; }
+    if (free && !tg.put.has(cur.y * COLS + cur.x) && tg.sel && tgLeft(tg.sel) > 0) { g.globalAlpha = .5; tgIcon(g, tg.sel, ox, oy); g.globalAlpha = 1; }
     for (const [a, b] of [[0, 0], [12, 0], [0, 15], [12, 15]]) px(g, w, ox + a, oy + b, 4, 1); for (const [a, b] of [[0, 0], [15, 0], [0, 12], [15, 12]]) px(g, w, ox + a, oy + b, 1, 4); }
   // en bas : les pièces à poser, les billes arrivées, le bouton
   const hy = ROWS * TS; px(g, '#141222', 0, hy, W, H - hy); px(g, '#2a2640', 0, hy, W, 1);
-  TG_PK.filter(k => tg.L.inv[k]).forEach((k, i) => { const x = 2 + i * 30, on = tg.sel === k, n = tgLeft(k);
-    px(g, on ? '#ffd84a' : '#2a2640', x, hy + 3, 29, 18); px(g, on ? '#2a2018' : '#1c1a2e', x + 1, hy + 4, 27, 16);
-    tgPiece(g, TG_FIRST[k] || k, x, hy + (k === 'T' ? -2 : 4), false, false);  /* le tapis, en bas de sa case, remonté dans le bouton */ pxFont(g, String(n), x + 27, hy + 18, n ? '#ffffff' : '#5a5068', 7, 'right'); });
+  tgLive().forEach((k, i) => { const bw = tgBW(), x = 2 + i * bw, on = tg.sel === k, n = tgLeft(k);
+    px(g, on ? '#ffd84a' : '#2a2640', x, hy + 3, bw - 1, 18); px(g, on ? '#2a2018' : '#1c1a2e', x + 1, hy + 4, bw - 3, 16);
+    tgIcon(g, k, x, hy + (k === 'T' ? -2 : k === 'U' || k === 'X' ? 3 : 4));  /* le tapis, en bas de sa case, remonté dans le bouton */ if (!tg.free) pxFont(g, String(n), x + 27, hy + 18, n ? '#ffffff' : '#5a5068', 7, 'right'); });
   const res = tg.run ? tgResult() : null;
-  pxFont(g, res ? 'Billes ' + res.ok + ' / ' + res.n : '3★ : ' + tg.L.par + ' pièce' + (tg.L.par > 1 ? 's' : ''), 186, hy + 15, res ? '#ffffff' : '#b8b0c8', 6, 'right');
+  if (!tg.free) pxFont(g, res ? 'Billes ' + res.ok + ' / ' + res.n : '3★ : ' + tg.L.par + ' pièce' + (tg.L.par > 1 ? 's' : ''), 186, hy + 15, res ? '#ffffff' : '#b8b0c8', 6, 'right');
   const running = tg.mode === 'play'; px(g, running ? '#e84a3a' : '#3ac85a', 190, hy + 4, 48, 16); px(g, running ? '#ff8a7a' : '#a0f0a0', 190, hy + 4, 48, 1); px(g, '#120c18', 190, hy + 19, 48, 1);
   pxFont(g, running ? 'STOP' : 'LANCER', 214, hy + 15, '#ffffff', 8, 'center');
   if (tg.msg) { px(g, 'rgba(14,10,20,.85)', 0, hy - 12, W, 12); pxFont(g, tg.msg.txt, W / 2, hy - 3, '#ffd84a', 7, 'center'); }
@@ -618,11 +638,13 @@ function tgDraw() {
     tgStars(g, tg.stars, W / 2 - 25, 61);
   }
   if (tg.tick % 15 === 0) g.canvas.setAttribute('aria-label', 'Toboggan, niveau ' + (tg.li + 1) + ' ' + tg.L.name + ' : ' + {ready: 'présentation', edit: 'construction', play: 'en route', pause: 'pause', over: 'réussi'}[tg.mode] +
-    ', ' + tg.put.size + ' pièces posées' + (tg.L.cups !== '*' ? ', pots ' + [...new Set(tg.L.cups)].map(c => TG_CNAME[c]).join(', ') : '') + (res ? ', billes arrivées ' + res.ok + ' sur ' + res.n : '') + ', pièce choisie ' + (TG_PIECES[tg.sel] || 'aucune') + (tg.mode === 'over' ? ', ' + tg.stars + ' étoiles' : '') + '.');
+    ', ' + tg.put.size + ' pièces posées' + (tg.L.cups !== '*' ? ', pots ' + [...new Set(tg.L.cups)].map(c => TG_CNAME[c]).join(', ') : '') + (res ? ', billes arrivées ' + res.ok + ' sur ' + res.n : '') + ', pièce choisie ' + (TG_PIECES[tg.sel] || TG_BUILD[tg.sel] || 'aucune') + (tg.mode === 'over' ? ', ' + tg.stars + ' étoiles' : '') + '.');
 }
 const TG_STAR = ['...k...', '..kyk..', 'kkkyykk', 'kyyyyyk', '.kyyyk.', '.kykyk.', 'kk...kk'];
 function tgStars(g, n, x, y) { for (let i = 0; i < 3; i++) TG_STAR.forEach((r, j) => [...r].forEach((c, k) => { const col = (i < n ? {k: '#1a1008', y: '#ffd84a'} : {k: '#5a5068', y: '#3a3046'})[c]; if (col) px(g, col, x + i * 18 + k * 2, y + j * 2, 2, 2); })); }
 function tgInfo() {
+  if (tg?.free) { tgs.sand = {map: [...tg.L.map], put: [...tg.put]}; saveGames(); const n = c => tg.L.map.join('').split(c).length - 1;
+    $('tgStats').replaceChildren(...[['Mode', 'Bac à sable'], ['Pièces posées', tg.put.size], ['Distributeurs', n('H')], ['Pots', n('U')]].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))])); return; }
   const li = tg ? tg.li : tgs.level, L = TG_LEVELS[li];
   $('tgStats').replaceChildren(...[['Niveau', (li + 1) + '. ' + L.name], ['Record', tgs.best[li] != null ? tgs.best[li] + ' pièces' : '--'], ['Étoiles', (tgs.stars[li] || 0) + ' / 3'], ['Pour 3 étoiles', L.par + ' pièces'],
     ['Circuits réussis', tgs.wins], ['Étoiles en tout', Object.values(tgs.stars).reduce((a, b) => a + b, 0) + ' / ' + TG_LEVELS.length * 3]].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))]));
@@ -642,8 +664,8 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (tg.mode === 'pause') { if (k === 'Enter' || k === ' ' || k === 'p' || k === 'P') { e.preventDefault(); tg.mode = 'play'; } return; }
-  const live = TG_PK.filter(q => tg.L.inv[q]);
-  if (/^[1-4]$/.test(k) && live[k - 1]) { tgChoose(live[k - 1]); return; }
+  const live = tgLive();
+  if (/^[1-9]$/.test(k) && live[k - 1]) { tgChoose(live[k - 1]); return; }
   if (k === 'Enter') { e.preventDefault(); if (tg.mode === 'play') tgHalt(); else tgGo(); return; }
   if (k === 'Escape' && tg.mode === 'play') { tgHalt(); return; }
   if (tg.mode !== 'edit') return;
@@ -661,7 +683,7 @@ document.addEventListener('keydown', e => {
     if (tg.mode === 'over') return;
     if (tg.mode === 'pause') { tg.mode = 'play'; return; }
     if (y >= TG.ROWS * TG.TS) { if (x >= 190) { if (tg.mode === 'play') tgHalt(); else tgGo(); return; }
-      const live = TG_PK.filter(q => tg.L.inv[q]), i = Math.floor((x - 2) / 30); if (live[i]) tgChoose(live[i]); return; }
+      const live = tgLive(), i = Math.floor((x - 2) / tgBW()); if (live[i]) tgChoose(live[i]); return; }
     const cx = Math.floor(x / TG.TS), cy = Math.floor(y / TG.TS); tg.kb = false;
     if (tg.mode === 'play') tgHalt();
     if (e.button === 2) tgRemove(cx, cy); else tgPlace(cx, cy);
@@ -670,6 +692,7 @@ document.addEventListener('keydown', e => {
   cv.onpointerleave = () => { if (tg) tg.hover = null; };
   cv.oncontextmenu = e => e.preventDefault(); }
 $('tgNew').onclick = () => { tgNew(tg?.li ?? tgs.level); $('tgNew').blur(); };
+$('tgSand').onclick = () => { if (tg?.free) tgNew(tg.li); else tgSand(); $('tgSand').blur(); };
 setTimeout(() => {  // vérification, 2 s après le chargement : chaque niveau est bien dessiné, ne se résout pas tout seul, et sa solution le résout avec « par » pièces
   const bad = [], keep = tg, keepS = JSON.stringify(tgs); tg = null; tgMute = true;
   TG_LEVELS.forEach((L, li) => {
@@ -679,6 +702,8 @@ setTimeout(() => {  // vérification, 2 s après le chargement : chaque niveau e
     if (L.sol.length !== L.par || !play(L.sol)) bad.push(L.name + ' : la solution ne marche pas');
     const need = {}; for (const [, , k] of L.sol) { const q = k === 'L' ? 'R' : k[0]; need[q] = (need[q] || 0) + 1; } if (Object.keys(need).some(q => need[q] > (L.inv[q] || 0))) bad.push(L.name + ' : pas assez de pièces');
   });
+  delete tgs.sand; tgSand(); tg.put.set(1 * TG.COLS + 1, 'R'); tgLaunch(); while (!tg.run.done) tgStep(); { const r = tgResult(); if (r.ok !== r.n || !r.n) bad.push('bac à sable : rampe'); }
+  tgStop(); tg.sel = 'H'; tgPlace(5, 0); const twoH = tgPrep().hops.length === 2; tgPlace(5, 0); if (!twoH || tgPrep().hops.length !== 1 || !tgs.sand) bad.push('bac à sable : décor');
   console.assert(!bad.length, 'toboggan', bad);
   Object.assign(tgs, JSON.parse(keepS)); for (const k of Object.keys(tgs)) if (!(k in JSON.parse(keepS))) delete tgs[k];
   tg = keep; tgMute = false; if (tg) tgInfo();

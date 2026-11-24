@@ -27,5 +27,16 @@ await shot('0-niveau');
   for (let i = 0; i < 30 && !/: réussi,/.test(await label()); i++) await sleep(300);
   const f = await label(); if (!/niveau 30 Grand final : réussi, 3 pièces posées, pots rouge, bleue, billes arrivées 6 sur 6/.test(f)) throw new Error('le grand final devait réussir : « ' + f + ' »');
   await sleep(1500);
-  return l + ' · ' + f;
+  // le bac à sable : à la souris, choisir le pot, le poser ; choisir la rampe, la poser sous le distributeur ; lancer
+  const tap = (x, y, button = 0) => pj(`(() => { const c = document.getElementById('tgCanvas'), r = c.getBoundingClientRect(); c.onpointerdown({preventDefault() {}, button: ${button}, clientX: r.left + ${x} / 240 * r.width, clientY: r.top + ${y} / 150 * r.height}); })()`);
+  await pj(`document.getElementById('tgSand').click(), 0`); await sleep(300);
+  await tap(2 + 1 * 17 + 8, 138); await tap(3 * 16 + 8, 4 * 16 + 8);  // un pot de plus, en l'air
+  await tap(2 + 4 * 17 + 8, 138); await tap(1 * 16 + 8, 1 * 16 + 8);  // la rampe
+  await sleep(300); await shot('5-bac-a-sable');
+  const sb = await label(); if (!/Bac à sable : construction, 1 pièces posées, pièce choisie Rampe/.test(sb)) throw new Error('bac à sable : « ' + sb + ' »');
+  await tap(214, 140); for (let i = 0; i < 40 && !/sur 3 dans les pots/.test(await pj(`document.getElementById('tgCanvas').__tg.st().msg?.txt || ''`)); i++) await sleep(300);
+  const sm = await pj(`document.getElementById('tgCanvas').__tg.st().msg?.txt || ''`); await shot('6-bac-a-sable-fin');
+  if (sm !== '3 billes sur 3 dans les pots') throw new Error('bac à sable : ' + sm);
+  await pj(`document.getElementById('tgSand').click(), 0`);
+  return l + ' · ' + f + ' · bac à sable : ' + sm;
 };

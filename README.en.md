@@ -4,6 +4,10 @@ A pixel art marble run game: place pieces on the board to guide the marbles to t
 
 *Version française : [README.md](README.md)*
 
+## Sandbox (new in 1.2.0)
+
+The **SANDBOX** button opens a free board, with no level and no piece limit. Besides ramps, funnels, trampolines, switches, belts, fans and magnets, you place the scenery yourself: dispensers (each with its own colour), jars, walls and spikes. Clicking a scenery piece again removes it. LAUNCH tells how many marbles end up in the jars. Your circuit is kept from one time to the next.
+
 ## Controls
 
 - **Mouse**: click a piece at the bottom to pick it, then an empty cell to place it. Click a ramp or a switch again to turn it, and once more to remove it; right-click to remove.
