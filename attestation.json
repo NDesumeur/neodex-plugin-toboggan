@@ -1,9 +1,9 @@
 {
   "pluginId": "neodex.toboggan",
   "repo": "NDesumeur/neodex-plugin-toboggan",
-  "version": "1.2.0",
-  "sha256": "79bd5e44fc8793ba74356ae434d369946bb650b3bfa4ff646597287bf4bfc066",
-  "approvedAt": "2026-11-24T15:56:16.825Z",
+  "version": "1.3.0",
+  "sha256": "9ddad9bfcede143113081dc733e82d229b10b77e79f9032763f94064ad70dea7",
+  "approvedAt": "2026-11-25T17:16:46.514Z",
   "neobase": ">=4.0.0",
-  "signature": "Fz6h3vYHyMd+nMXvJNqOVBKvBgxLnaPSvHGquUoaQZ/pAEx2RZyDbOXzBnp2mrCG0IoouQK41xwyNLdYTAk4DQ=="
+  "signature": "usKhbBg1Ol1W5J4VYzZkat6AK5lz1g7ps0rG3mci+MUzNPoCsntTsUUmCkjtK2Ty1AV5VYMcNx6O9ucB3PBHDQ=="
 }
