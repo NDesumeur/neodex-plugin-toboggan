@@ -299,6 +299,9 @@ export default async function (ctx) {
   const best = (k, v) => { const b = games.best[k]; if (v > (b ?? 0)) {  // un score nul n'est jamais un record
     games.best[k] = v; saveGames(); return true; } return false; };
   const gstore = (k, init) => (games[k] ??= init);
+  // les trophées de NeoDex (3.4.8 et plus) : succès et records déclarés dans plugin.json ; sur un NeoDex plus ancien, rien ne se passe
+  const trophy = id => { ctx.games?.unlock(id).catch(() => {}); };
+  const trophyRecord = (id, v) => { if (v != null && Number.isFinite(+v)) ctx.games?.record(id, +v).catch(() => {}); };
 function gameLoop(st, appKey, update, draw) {
   cancelAnimationFrame(st.raf);
   const STEP = 1000 / 60; let acc = 0, last = performance.now();
@@ -643,6 +646,7 @@ function tgDraw() {
 const TG_STAR = ['...k...', '..kyk..', 'kkkyykk', 'kyyyyyk', '.kyyyk.', '.kykyk.', 'kk...kk'];
 function tgStars(g, n, x, y) { for (let i = 0; i < 3; i++) TG_STAR.forEach((r, j) => [...r].forEach((c, k) => { const col = (i < n ? {k: '#1a1008', y: '#ffd84a'} : {k: '#5a5068', y: '#3a3046'})[c]; if (col) px(g, col, x + i * 18 + k * 2, y + j * 2, 2, 2); })); }
 function tgInfo() {
+  setTimeout(tgTrophies);
   if (tg?.free) { tgs.sand = {map: [...tg.L.map], put: [...tg.put]}; saveGames(); const n = c => tg.L.map.join('').split(c).length - 1;
     $('tgStats').replaceChildren(...[['Mode', 'Bac à sable'], ['Pièces posées', tg.put.size], ['Distributeurs', n('H')], ['Pots', n('U')]].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))])); return; }
   const li = tg ? tg.li : tgs.level, L = TG_LEVELS[li];
@@ -710,6 +714,12 @@ setTimeout(() => {  // vérification, 2 s après le chargement : chaque niveau e
 }, 2000);
 $('tgFs').onclick = () => { $('tgFs').blur(); try { document.fullscreenElement ? document.exitFullscreen() : $('tgCanvas').parentElement.requestFullscreen?.().catch(() => {}); } catch {} };
 $('tgCanvas').__tg = {st: () => tg, sol: li => { tgNew(li); tg.mode = 'edit'; for (const [x, y, k] of TG_LEVELS[li].sol) tg.put.set(y * TG.COLS + x, k); tgInfo(); tgGo(); }};  // pour le test « local »
+// les trophées, tirés des statistiques et des records gardés (aussi à l'ouverture : ce qui a été fait avant compte)
+function tgTrophies() {
+  const v = TG_LEVELS.map((L, i) => tgs.stars[i] || 0), done = v.filter(Boolean).length, st = v.reduce((a, b) => a + b, 0), sig = v.join(''); if (sig === tgTrophies.sig) return; tgTrophies.sig = sig;
+  trophyRecord('etoiles', st || null);
+  if (done >= 1) trophy('premier'); if (done >= 10) trophy('n10'); if (done >= TG_LEVELS.length) trophy('tous'); if (v.includes(3)) trophy('trois'); if (st >= TG_LEVELS.length * 3) trophy('etoiles');
+}
 ctx.onOpen(() => {
   if (!tg || !tg.g) { tgNew(tgUnlocked(tgs.level) ? tgs.level : 0); tg.g = $('tgCanvas').getContext('2d'); }
   gameLoop(tg, 'toboggan', tgUpdate, tgDraw); tgInfo();

@@ -1,7 +1,7 @@
 {
   "id": "neodex.toboggan",
   "name": "Toboggan",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "NDesumeur",
   "description": "Jeu de construction de circuits à billes en pixel art : pose des rampes, des entonnoirs, des trampolines et des aiguillages pour mener les billes jusqu'aux pots, en passant par des tunnels et en évitant les pics. Une vraie physique (roulis, rebonds, chocs entre billes), dix niveaux, et trois étoiles pour qui trouve le circuit le plus court. Bouton plein écran. Trente niveaux, avec trois nouvelles pièces (tapis roulant, ventilateur, aimant) et des billes vertes et jaunes à trier dans les pots de leur couleur. Un bac à sable libre : on pose aussi les distributeurs, les pots, les murs et les pics.",
   "icon": "icon.png",
@@ -22,5 +22,41 @@
   "sdk": "2.1.0",
   "permissions": [
     "storage"
+  ],
+  "succes": [
+    {
+      "id": "premier",
+      "nom": "Ça roule !",
+      "texte": "Réussir un premier circuit"
+    },
+    {
+      "id": "n10",
+      "nom": "Apprenti constructeur",
+      "texte": "Réussir 10 circuits"
+    },
+    {
+      "id": "tous",
+      "nom": "Grand architecte",
+      "texte": "Réussir les 30 circuits"
+    },
+    {
+      "id": "trois",
+      "nom": "Économe",
+      "texte": "Réussir un circuit avec 3 étoiles"
+    },
+    {
+      "id": "etoiles",
+      "nom": "Ciel étoilé",
+      "texte": "Gagner 90 étoiles, 3 sur chaque circuit",
+      "cache": true
+    }
+  ],
+  "records": [
+    {
+      "id": "etoiles",
+      "nom": "Étoiles gagnées",
+      "sens": "haut",
+      "format": "nombre"
+    }
   ]
 }
